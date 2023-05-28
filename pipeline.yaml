@@ -1,0 +1,79 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: kubeflow-translation-pipeline-
+  annotations: {pipelines.kubeflow.org/kfp_sdk_version: 1.8.21, pipelines.kubeflow.org/pipeline_compilation_time: '2023-05-24T14:51:30.550671',
+    pipelines.kubeflow.org/pipeline_spec: '{"description": "An example pipeline that
+      translate from Chinese to English.", "name": "Kubeflow Translation Pipeline"}'}
+  labels: {pipelines.kubeflow.org/kfp_sdk_version: 1.8.21}
+spec:
+  entrypoint: kubeflow-translation-pipeline
+  templates:
+  - name: kubeflow-translation-pipeline
+    dag:
+      tasks:
+      - {name: preprocess-data, template: preprocess-data}
+      - name: serve-model
+        template: serve-model
+        dependencies: [test-model]
+      - name: test-model
+        template: test-model
+        dependencies: [train-model]
+      - name: train-model
+        template: train-model
+        dependencies: [preprocess-data]
+  - name: preprocess-data
+    container:
+      image: kang/preprocess:v30
+      volumeMounts:
+      - {mountPath: /tmp, name: cc6359a3}
+    metadata:
+      labels:
+        pipelines.kubeflow.org/kfp_sdk_version: 1.8.21
+        pipelines.kubeflow.org/pipeline-sdk-type: kfp
+        pipelines.kubeflow.org/enable_caching: "true"
+    volumes:
+    - emptyDir: {}
+      name: cc6359a3
+  - name: serve-model
+    container:
+      image: kang/serve:v40
+      volumeMounts:
+      - {mountPath: /tmp, name: c41fd462}
+    metadata:
+      labels:
+        pipelines.kubeflow.org/kfp_sdk_version: 1.8.21
+        pipelines.kubeflow.org/pipeline-sdk-type: kfp
+        pipelines.kubeflow.org/enable_caching: "true"
+    volumes:
+    - emptyDir: {}
+      name: c41fd462
+  - name: test-model
+    container:
+      image: kang/test:v40
+      volumeMounts:
+      - {mountPath: /tmp, name: 147f67b2}
+    metadata:
+      labels:
+        pipelines.kubeflow.org/kfp_sdk_version: 1.8.21
+        pipelines.kubeflow.org/pipeline-sdk-type: kfp
+        pipelines.kubeflow.org/enable_caching: "true"
+    volumes:
+    - emptyDir: {}
+      name: 147f67b2
+  - name: train-model
+    container:
+      image: kang/train:v30
+      volumeMounts:
+      - {mountPath: /tmp, name: 4ff6b456}
+    metadata:
+      labels:
+        pipelines.kubeflow.org/kfp_sdk_version: 1.8.21
+        pipelines.kubeflow.org/pipeline-sdk-type: kfp
+        pipelines.kubeflow.org/enable_caching: "true"
+    volumes:
+    - emptyDir: {}
+      name: 4ff6b456
+  arguments:
+    parameters: []
+  serviceAccountName: pipeline-runner
